@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.net.URI;
+import java.util.EnumSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,6 +46,7 @@ class BookServiceTest {
         Book book = bookRepository.save(Book.builder()
                 .author(author)
                 .title("The art of kung fu")
+                .styles(new Styles(EnumSet.of(Style.NOVEL, Style.COMICS)))
                 .build());
 
         // When
@@ -59,6 +61,7 @@ class BookServiceTest {
 
         assertThat(actualBook.getAuthor()).isNotNull();
         assertThat(actualBook.getTitle()).isNotNull();
+        assertThat(actualBook.getStyles()).extracting(Styles::getStyles).isEqualTo(EnumSet.of(Style.NOVEL, Style.COMICS));
     }
 
     private String createURLWithPort(String uri) {
