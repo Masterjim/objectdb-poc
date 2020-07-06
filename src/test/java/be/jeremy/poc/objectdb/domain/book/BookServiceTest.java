@@ -43,11 +43,15 @@ class BookServiceTest {
                 .lastName("Norris")
                 .build());
 
-        Book book = bookRepository.save(Book.builder()
+        Book toPersist = Book.builder()
                 .author(author)
                 .title("The art of kung fu")
-                .styles(new Styles(EnumSet.of(Style.NOVEL, Style.COMICS)))
-                .build());
+                .build();
+
+        toPersist.addStyle(Style.NOVEL);
+        toPersist.addStyle(Style.COMICS);
+
+        Book book = bookRepository.save(toPersist);
 
         // When
         URI url = new URI(createURLWithPort("/books/" + book.getId()));
@@ -61,7 +65,7 @@ class BookServiceTest {
 
         assertThat(actualBook.getAuthor()).isNotNull();
         assertThat(actualBook.getTitle()).isNotNull();
-        assertThat(actualBook.getStyles()).extracting(Styles::getStyles).isEqualTo(EnumSet.of(Style.NOVEL, Style.COMICS));
+        assertThat(actualBook.getStyles()).containsExactly(Style.NOVEL, Style.COMICS);
     }
 
     private String createURLWithPort(String uri) {

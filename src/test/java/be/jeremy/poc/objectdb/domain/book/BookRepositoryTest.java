@@ -7,11 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.EnumSet;
+import java.util.Optional;
 
-import static be.jeremy.poc.objectdb.domain.book.Styles.toInt;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.atomicIntegerFieldUpdater;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class BookRepositoryTest {
@@ -30,14 +28,52 @@ class BookRepositoryTest {
                 .lastName("Norris")
                 .build());
 
-        Styles styles = new Styles(EnumSet.of(Style.NOVEL, Style.COMICS));
-
-        Book book = bookRepository.save(Book.builder()
+        Book bookToPersist = Book.builder()
                 .author(author)
                 .title("The art of kung fu")
-                .styles(styles)
+                .build();
+
+        bookToPersist.addStyle(Style.NOVEL);
+        bookToPersist.addStyle(Style.COMICS);
+
+        Book saved = bookRepository.save(bookToPersist);
+
+        assertThat(saved.getStyles()).containsExactly(Style.NOVEL, Style.COMICS);
+        assertThat(saved.getStylesRep()).isEqualTo(33);
+    }
+
+    @Test
+    void shouldUpdateBook() {
+        // Given
+        Author author = authorRepository.save(Author.builder()
+                .firstName("Chuck")
+                .middleName("Paul")
+                .lastName("Norris")
                 .build());
 
-        assertThat(book.getStylesRep()).isEqualTo(toInt(styles));
+        EnumSet<Style> styles = EnumSet.of(Style.NOVEL, Style.COMICS);
+
+        Book toPersist = Book.builder()
+                .author(author)
+                .title("The art of kung fu")
+                .build();
+
+        toPersist.addStyle(Style.NOVEL);
+        toPersist.addStyle(Style.COMICS);
+
+        Book saved = bookRepository.save(toPersist);
+        // When
+        saved.setTitle("The art of kung fu 2");
+        saved.addStyle(Style.HEROIC_FANTASY);
+
+        bookRepository.saveAndFlush(saved);
+
+        Optional<Book> actual = bookRepository.findById(saved.getId());
+
+        assertThat(actual).isNotEmpty().hasValueSatisfying(actualBook -> {
+            assertThat(actualBook.getTitle()).isEqualTo("The art of kung fu 2");
+            assertThat(actualBook.getStyles()).containsOnly(Style.NOVEL, Style.COMICS, Style.HEROIC_FANTASY);
+            assertThat(actualBook.getStylesRep()).isEqualTo(49);
+        });
     }
 }
